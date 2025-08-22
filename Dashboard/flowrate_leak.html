@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Live Dashboard</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        canvas {
+            display: block;
+            margin: 20px auto;
+        }
+    </style>
+</head>
+<body>
+    <h1>Live Dashboard</h1>
+    <canvas id="liveChart" width="800" height="400"></canvas>
+
+    <script>
+        // Maximum number of data points to display
+        var maxDataPoints = 10;
+
+        // Chart configuration
+        var ctx = document.getElementById('liveChart').getContext('2d');
+        var liveChart = new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: Array.from({ length: maxDataPoints }, (_, i) => i),
+                datasets: [{
+                    label: 'Flowrate (After Leak)',
+                    borderColor: 'rgb(75, 192, 192)',
+                    data: Array(maxDataPoints).fill(null),
+                }]
+            },
+            options: {
+                scales: {
+                    x: [{
+                        type: 'linear',
+                        position: 'bottom',
+                        ticks: {
+                            min: 0,
+                            max: maxDataPoints - 1,
+                            stepSize: 1
+                        }
+                    }],
+                    y: [{
+                        ticks: {
+                            min: 0,
+                            max: 1,
+                            stepSize: 0.1
+                        }
+                    }]
+                }
+            }
+        });
+
+        // Variable to track the last timestamp
+        var lastTimestamp = null;
+
+        // Function to fetch and update data
+        function fetchData() {
+            fetch('flowrate_leak_get_data.php')
+                .then(response => response.json())
+                .then(data => updateChart(data))
+                .catch(error => console.error('Error:', error));
+        }
+
+        // Function to update the chart
+        function updateChart(data) {
+            if (lastTimestamp === data.timestamps[0]) {
+                console.log("Timestamp did not change. Stopping plotting.");
+                return;
+            }
+
+            // Update the last timestamp
+            lastTimestamp = data.timestamps[0];
+
+            // Shift existing data to the left
+            liveChart.data.labels.shift();
+            liveChart.data.datasets[0].data.shift();
+
+            // Add new data at the end
+            liveChart.data.labels.push(lastTimestamp);
+            liveChart.data.datasets[0].data.push(data.flow_rate[0]);
+
+            // Update the chart
+            liveChart.update();
+        }
+
+        // Fetch data every second
+        setInterval(fetchData, 1000);
+    </script>
+</body>
+</html>

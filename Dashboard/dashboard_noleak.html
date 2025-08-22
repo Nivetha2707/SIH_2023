@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>No Leak</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        body {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 20px;
+            padding: 20px;
+        }
+
+        h1 {
+            grid-column: 1 / -1;
+            text-align: center;
+            margin-bottom: 20px;
+        }
+
+        .chart-container {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background-color: #f0f0f0;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            margin-bottom: 20px;
+        }
+
+        canvas {
+            max-width: 100%;
+            height: auto;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+        }
+    </style>
+</head>
+<body>
+    <h1>No Leak</h1>
+
+    <!-- Chart 1 -->
+    <div class="chart-container">
+        <canvas id="liveChart1"></canvas>
+    </div>
+
+    <!-- Chart 2 -->
+    <div class="chart-container">
+        <canvas id="liveChart2"></canvas>
+    </div>
+
+    <!-- Chart 3 -->
+    <div class="chart-container">
+        <canvas id="liveChart3"></canvas>
+    </div>
+
+    <!-- Chart 4 -->
+    <div class="chart-container">
+        <canvas id="liveChart4"></canvas>
+    </div>
+
+    <!-- Chart 5 -->
+    <div class="chart-container">
+        <canvas id="liveChart5"></canvas>
+    </div>
+
+    <script>
+        function createLiveChart(chartId, label, dataKey, phpFile) {
+            var maxDataPoints = 10;
+            var ctx = document.getElementById(chartId).getContext('2d');
+
+            var liveChart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: Array.from({ length: maxDataPoints }, (_, i) => i),
+                    datasets: [{
+                        label: label,
+                        borderColor: 'rgb(75, 192, 192)',
+                        data: Array(maxDataPoints).fill(null),
+                    }]
+                },
+                options: {
+                    scales: {
+                        x: [{
+                            type: 'linear',
+                            position: 'bottom',
+                            ticks: {
+                                stepSize: 1
+                            }
+                        }]
+                    }
+                }
+            });
+
+            var lastTimestamp = null;
+
+            function fetchData() {
+                fetch(phpFile)
+                    .then(response => response.json())
+                    .then(data => updateChart(data, liveChart, dataKey))
+                    .catch(error => console.error('Error:', error));
+            }
+
+            // Fetch data every second
+            setInterval(fetchData, 1000);
+        }
+
+        function updateChart(data, liveChart, dataKey) {
+            var lastTimestamp = liveChart.data.labels[liveChart.data.labels.length - 1];
+
+            if (lastTimestamp === data.timestamps[0]) {
+                console.log("Timestamp did not change. Stopping plotting.");
+                return;
+            }
+
+            liveChart.data.labels.shift();
+            liveChart.data.datasets[0].data.shift();
+
+            liveChart.data.labels.push(data.timestamps[0]);
+            liveChart.data.datasets[0].data.push(data[dataKey][0]);
+
+            liveChart.update();
+        }
+
+        createLiveChart('liveChart1', 'NRW', 'nrw', 'zero_nrw_get_data.php');
+        createLiveChart('liveChart2', 'Flowrate Difference', 'flowrate_diff', 'zero_flowrate_diff_get_data.php');
+        createLiveChart('liveChart3', 'Total Water Passed (After)', 'total_water_passed', 'zero_total_water_passed_get_data.php');
+        createLiveChart('liveChart4', 'Flowrate (Before)', 'flow_rate', 'zero_flowrate_sensor_get_data.php');
+        createLiveChart('liveChart5', 'Flowrate (After)', 'flow_rate', 'zero_flowrate_noleak_get_data.php');
+    </script>
+</body>
+</html>
