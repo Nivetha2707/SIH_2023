@@ -1,0 +1,69 @@
+import random
+import time
+import mysql.connector
+
+# Replace the placeholders with your actual MySQL server details
+db_connection_leak = mysql.connector.connect(
+    host="localhost",
+    user="root",
+    password="sanju2907",
+    database="sensor_data"
+)
+
+db_connection_no_leak = mysql.connector.connect(
+    host="localhost",
+    user="root",
+    password="sanju2907",
+    database="sensor_data"
+)
+
+cursor_leak = db_connection_leak.cursor()
+cursor_no_leak = db_connection_no_leak.cursor()
+
+def generate_and_insert_combined_data():
+    total_water_passed_leak = 0
+    total_water_passed_no_leak = 2  # Initialize to a value greater than the leak
+
+    while True:
+        base_flow_rate_gpm_leak = 10.0
+        flow_rate_variation_leak = random.uniform(-0.1, 0.1)
+        flow_rate_gpm_leak = base_flow_rate_gpm_leak + flow_rate_variation_leak
+        flow_rate_gpm_leak = max(flow_rate_gpm_leak, 0)
+        flow_rate_lps_leak = flow_rate_gpm_leak * 0.06309
+        base_pressure_leak = 60.0
+        pressure_variation_leak = random.uniform(-1.0, 1.0)
+        pressure_leak = base_pressure_leak + pressure_variation_leak
+        pressure_leak = max(pressure_leak, 0)
+        time_interval = 1
+        amount_passed_liter_leak = flow_rate_lps_leak * time_interval
+        total_water_passed_leak += amount_passed_liter_leak
+        timestamp = time.strftime('%Y-%m-%d %H:%M:%S')
+        print(f'Timestamp: {timestamp}, Flow Rate (Leak): {flow_rate_lps_leak:.4f} L/s, Pressure (Leak): {pressure_leak:.2f} PSI, Amount Passed (Leak): {amount_passed_liter_leak:.4f} liters, Total Water Passed (Leak): {total_water_passed_leak:.4f} liters')
+
+        insert_query_leak = "INSERT INTO randomdata_sensor_leak(timestamp, flow_rate, pressure, amount_passed, total_water_passed) VALUES (%s, %s, %s, %s, %s)"
+        insert_data_leak = (timestamp, flow_rate_lps_leak, pressure_leak, amount_passed_liter_leak, total_water_passed_leak)
+        cursor_leak.execute(insert_query_leak, insert_data_leak)
+        db_connection_leak.commit()
+
+        base_flow_rate_gpm_no_leak = 12.0
+        flow_rate_variation_no_leak = random.uniform(-0.1, 0.1)
+        flow_rate_gpm_no_leak = base_flow_rate_gpm_no_leak + flow_rate_variation_no_leak
+        flow_rate_gpm_no_leak = max(flow_rate_gpm_no_leak, 0)
+        flow_rate_lps_no_leak = flow_rate_gpm_no_leak * 0.06309
+        base_pressure_no_leak = 60.0
+        pressure_variation_no_leak = random.uniform(-1.0, 1.0)
+        pressure_no_leak = base_pressure_no_leak + pressure_variation_no_leak
+        pressure_no_leak = max(pressure_no_leak, 0)
+        amount_passed_liter_no_leak = flow_rate_lps_no_leak * time_interval
+        total_water_passed_no_leak += amount_passed_liter_no_leak
+        print(f'Timestamp: {timestamp}, Flow Rate (No Leak): {flow_rate_lps_no_leak:.4f} L/s, Pressure (No Leak): {pressure_no_leak:.2f} PSI, Amount Passed (No Leak): {amount_passed_liter_no_leak:.4f} liters, Total Water Passed (No Leak): {total_water_passed_no_leak:.4f} liters')
+
+        insert_query_no_leak = "INSERT INTO RandomData_Sensor_NoLeak(timestamp, flow_rate, pressure, amount_passed, total_water_passed) VALUES (%s, %s, %s, %s, %s)"
+        insert_data_no_leak = (timestamp, flow_rate_lps_no_leak, pressure_no_leak, amount_passed_liter_no_leak, total_water_passed_no_leak)
+        cursor_no_leak.execute(insert_query_no_leak, insert_data_no_leak)
+        db_connection_no_leak.commit()
+
+        time.sleep(1)
+
+# Uncomment the line below to start generating and inserting combined realistic flow rate data
+generate_and_insert_combined_data()
