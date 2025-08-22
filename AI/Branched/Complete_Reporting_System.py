@@ -34,7 +34,7 @@ db_config = {
 }
 
 # Twilio API configuration
-twilio_account_sid = 'ACe6823381435fdf2fa817968d86871237'
+twilio_account_sid = 'ACe6823388d86871237'
 twilio_auth_token = 'a85bc36af54b773182bda7664f6f41e3'
 twilio_phone_number = '+12055286264'
 recipient_phone_number = '+919344970465'
@@ -572,3 +572,4 @@ while True:
         db_connection.commit()
 
     time.sleep(1)
+
